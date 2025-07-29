@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
+
+	"github.com/marcusbello/email-queue-service/internal/email"
 )
 
 type Server struct {
@@ -42,15 +45,16 @@ func (s *Server) handleSendEmail(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	type emailJob struct {
-		To string `json:"to"`
-		Subject string `json:"subject"`
-		Body string `json:"body"`
-	}
-	var job emailJob
+
+	var job email.EmailJob
 
 	if err := json.NewDecoder(r.Body).Decode(&job); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if !validateEmailJob(job) {
+		http.Error(w, "Invalid input", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -58,4 +62,12 @@ func (s *Server) handleSendEmail(w http.ResponseWriter, r *http.Request)  {
 
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(`{"status":"enqueued"}`))
+}
+
+func validateEmailJob(j email.EmailJob) bool {
+	if j.To == "" || j.Subject == "" || j.Body == "" {
+		return false
+	}
+	match, _ := regexp.MatchString(`^[^@\s]+@[^@\s]+\.[^@\s]+$`, j.To)
+	return match
 }
