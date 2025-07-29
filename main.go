@@ -1,10 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/marcusbello/email-queue-service/internal/server"
 )
 
 const (
@@ -30,5 +36,22 @@ func main() {
 		flag.Usage()
 		log.Printf("Using default HTTP address: %s with %d Workers ", httpAddr, numberOfWorkers)
 	}
+	log.Printf("Using HTTP address: %s with %d Workers ", httpAddr, numberOfWorkers)
 
+	// create server
+	srv := server.NewServer(httpAddr)
+	go srv.Start()
+
+	// Handle shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	<-stop
+	log.Println("Shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	srv.Shutdown(ctx)
+	log.Println("Server stopped gracefully")
 }
