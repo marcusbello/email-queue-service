@@ -18,15 +18,17 @@ import (
 
 const (
 	DefaultHTTPAddr = "localhost:8080"
+	DefaultQueueSize = 10
+	DefaultNumberOfWorkers = 3
 )
 
-var numberOfWorkers int = 3
-var queueSize int = 10
+var numberOfWorkers int
+var queueSize int
 var httpAddr string
 
 func init() {
-	flag.Int("workers", numberOfWorkers, "Number of worker goroutines")
-	flag.Int("queue_size", queueSize, "Queue size")
+	flag.IntVar(&numberOfWorkers, "workers", numberOfWorkers, "Number of worker goroutines")
+	flag.IntVar(&queueSize, "queue_size", queueSize, "Queue size")
 	flag.StringVar(&httpAddr, "haddr", DefaultHTTPAddr, "Set the HTTP address")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] \n", os.Args[0])
@@ -36,14 +38,16 @@ func init() {
 
 
 func main() {
+	// Parse command line flags
 	flag.Parse()
 	if len(flag.Args()) != 1 {
 		flag.Usage()
-		log.Printf("Using default values HTTP address: %s; workers: %d; Queue size: %d ", httpAddr, numberOfWorkers, queueSize)
+		log.Printf("Using default values HTTP address: %s; workers: %d; Queue size: %d", httpAddr, numberOfWorkers, queueSize)
 	} else {
-		log.Printf("Using HTTP address: %s; workers: %d; Queue size: %d ", httpAddr, numberOfWorkers, queueSize)
+		log.Printf("Using HTTP address: %s; workers: %d; Queue size: %d", httpAddr, numberOfWorkers, queueSize)
 	}
-	// Create a job queue
+
+	// Create an in-memory job queue
 	var jobQueue queue.JobQueue = queue.NewInMemoryQueue(queueSize)
 
 	// Create email sender
@@ -53,6 +57,7 @@ func main() {
 	log.Printf("Starting %d workers...\n", numberOfWorkers)
 	worker.StartWorkers(numberOfWorkers, jobQueue, emailSender)
 	log.Println("Workers started successfully")
+	
 	// create server
 	srv := server.NewServer(httpAddr, jobQueue)
 	go srv.Start()
