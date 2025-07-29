@@ -8,19 +8,22 @@ import (
 	"regexp"
 
 	"github.com/marcusbello/email-queue-service/internal/email"
+	"github.com/marcusbello/email-queue-service/internal/queue"
 )
 
 type Server struct {
 	httpServer *http.Server
+	queue      queue.JobQueue
 }
 
-func NewServer(addr string) *Server {
+func NewServer(addr string, queue queue.JobQueue) *Server {
 	mux := http.NewServeMux()
 	s := &Server{
 		httpServer: &http.Server{
 			Addr: addr,
 			Handler: mux,
 		},
+		queue: queue,
 	}
 
 	mux.HandleFunc("/send-email", s.handleSendEmail)
