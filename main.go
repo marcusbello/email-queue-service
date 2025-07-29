@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/marcusbello/email-queue-service/internal/email"
 	"github.com/marcusbello/email-queue-service/internal/queue"
 	"github.com/marcusbello/email-queue-service/internal/server"
+	"github.com/marcusbello/email-queue-service/internal/worker"
 )
 
 const (
@@ -44,6 +46,13 @@ func main() {
 	// Create a job queue
 	var jobQueue queue.JobQueue = queue.NewInMemoryQueue(queueSize)
 
+	// Create email sender
+	emailSender := email.NewEmailSender()
+
+	// start workers
+	log.Printf("Starting %d workers...\n", numberOfWorkers)
+	worker.StartWorkers(numberOfWorkers, jobQueue, emailSender)
+	log.Println("Workers started successfully")
 	// create server
 	srv := server.NewServer(httpAddr, jobQueue)
 	go srv.Start()
@@ -59,5 +68,7 @@ func main() {
 	defer cancel()
 
 	srv.Shutdown(ctx)
+	jobQueue.Close()
+	worker.WaitForWorkers()
 	log.Println("Server stopped gracefully")
 }
