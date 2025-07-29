@@ -10,6 +10,8 @@ type InMemoryQueue struct {
 	jobs chan email.EmailJob
 }
 
+// NewInMemoryQueue creates a new in-memory job queue with the specified size.
+// Using a buffered channel to simulate a queue with the specified size.
 func NewInMemoryQueue(size int) *InMemoryQueue {
 	return &InMemoryQueue{jobs: make(chan email.EmailJob, size)}
 }

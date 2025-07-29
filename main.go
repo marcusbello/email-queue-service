@@ -41,6 +41,7 @@ func main() {
 	} else {
 		log.Printf("Using HTTP address: %s; workers: %d; Queue size: %d ", httpAddr, numberOfWorkers, queueSize)
 	}
+	// Create a job queue
 	var jobQueue queue.JobQueue = queue.NewInMemoryQueue(queueSize)
 
 	// create server

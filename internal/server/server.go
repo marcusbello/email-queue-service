@@ -61,6 +61,11 @@ func (s *Server) handleSendEmail(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
+	if err := s.queue.Enqueue(job); err != nil {
+		http.Error(w, "Queue full", http.StatusServiceUnavailable)
+		return
+	}
+
 	log.Print("Received email job: ", job)
 
 	w.WriteHeader(http.StatusAccepted)
